@@ -1,11 +1,5 @@
 #include "networking.h"
-
-void error_check( int i, char *s ) {
-  if ( i < 0 ) {
-    printf("[%s] error %d: %s\n", s, errno, strerror(errno) );
-    exit(1);
-  }
-}
+#include "err.h"
 
 /*=========================
   server_setup
@@ -16,12 +10,12 @@ void error_check( int i, char *s ) {
 
   returns the socket descriptor
   =========================*/
-int server_setup() {
+int server_setup(char *port) {
   int sd, i;
 
   //create the socket
   sd = socket( AF_INET, SOCK_STREAM, 0 );
-  error_check( sd, "server socket" );
+  exit_err( "server socket", sd );
   printf("[server] socket created\n");
 
   //setup structs for getaddrinfo
@@ -30,16 +24,16 @@ int server_setup() {
   hints->ai_family = AF_INET;  //IPv4 address
   hints->ai_socktype = SOCK_STREAM;  //TCP socket
   hints->ai_flags = AI_PASSIVE;  //Use all valid addresses
-  getaddrinfo(NULL, PORT, hints, &results); //NULL means use local address
+  getaddrinfo(NULL, port, hints, &results); //NULL means use local address
 
   //bind the socket to address and port
   i = bind( sd, results->ai_addr, results->ai_addrlen );
-  error_check( i, "server bind" );
+  exit_err( "server bind",i );
   printf("[server] socket bound\n");
 
   //set socket to listen state
   i = listen(sd, 10);
-  error_check( i, "server listen" );
+  exit_err( "server listen",i );
   printf("[server] socket in listen state\n");
 
   //free the structs used by getaddrinfo
@@ -66,7 +60,7 @@ int server_connect(int sd) {
 
   sock_size = sizeof(client_address);
   client_socket = accept(sd, (struct sockaddr *)&client_address, &sock_size);
-  error_check(client_socket, "server accept");
+  exit_err("server accept",client_socket);
 
   return client_socket;
 }
@@ -82,12 +76,12 @@ int server_connect(int sd) {
 
   returns the file descriptor for the socket
   =========================*/
-int client_setup(char * server) {
+int client_setup(char * server,char *port) {
   int sd, i;
 
   //create the socket
   sd = socket( AF_INET, SOCK_STREAM, 0 );
-  error_check( sd, "client socket" );
+  exit_err( "client socket", sd );
 
   //run getaddrinfo
   /* hints->ai_flags not needed because the client
@@ -96,12 +90,12 @@ int client_setup(char * server) {
   hints = (struct addrinfo *)calloc(1, sizeof(struct addrinfo));
   hints->ai_family = AF_INET;  //IPv4
   hints->ai_socktype = SOCK_STREAM;  //TCP socket
-  getaddrinfo(server, PORT, hints, &results);
+  getaddrinfo(server, port, hints, &results);
 
   //connect to the server
   //connect will bind the socket for us
   i = connect( sd, results->ai_addr, results->ai_addrlen );
-  error_check( i, "client connect" );
+  exit_err( "client connect", i );
 
   free(hints);
   freeaddrinfo(results);
