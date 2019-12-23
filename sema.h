@@ -1,3 +1,5 @@
+#include <sys/ipc.h>
+
 #ifndef SEMA_H
 #define SEMA_H
 
